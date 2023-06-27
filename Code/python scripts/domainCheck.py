@@ -121,6 +121,8 @@ path = "C:/Users/oleob/Downloads/test-dapp-main/src/index.js"
 
 check = False
 values = ["types","domain","primaryType","message"]
+domain =["name","version","chainId","verifyingContract","salt"]
+domain_types = ["string","string","uint256","address","bytes32"]
 
 # open the file
 with open(path, "r") as file:

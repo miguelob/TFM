@@ -78,6 +78,27 @@ def fix_types(input):
         .replace("EIP712Domain:","\"EIP712Domain\":") \
         .replace("'","\"")
 
+def check_domain(domain, types):
+    errors = ""
+    check = True
+    values_defined = []
+    for value in domain.keys():
+        values_defined.append(value)
+        if value not in domain_values:
+            errors.append(value + " not in domain.")
+        if value == "verifyingContract":
+            check = False
+    if check == True:
+        errors.append("verifyingContract not in domain.")
+    for value in types['EIP712Domain']:
+        if value['type'] not in domain_types:
+            errors.append(value['type'] + " not in domain.")
+        if value['name'] not in values_defined:
+            errors.append(value['name'] + " is defined in types but not used.")
+    if errors == "":
+        errors = "No errors found."
+    return errors
+
 def check_methods(types, primaryType, domain, message):
     errors = ""
     EIP =[]
@@ -120,8 +141,9 @@ def check_methods(types, primaryType, domain, message):
 path = "C:/Users/oleob/Downloads/test-dapp-main/src/index.js"
 
 check = False
+definition_check = False
 values = ["types","domain","primaryType","message"]
-domain =["name","version","chainId","verifyingContract","salt"]
+domain_values =["name","version","chainId","verifyingContract","salt"]
 domain_types = ["string","string","uint256","address","bytes32"]
 
 # open the file
@@ -140,10 +162,17 @@ with open(path, "r") as file:
         if "JSON.stringify" in next_line:
             # get the content of JSON.stringify
             content = next_line.split("JSON.stringify(")[1].split(")")[0]
-            pattern = r'const msgProg = {'
+            if ' ' in content:
+                definition_check = True
+            else:
+                pattern = r'const '+content+' = {'
 
-struct = find_between( data, "const msgParams = {", "};" )
-struct_fix = "{"+replace_last(fix_types(struct),'},','}')+"}"
+if not definition_check:
+    struct = find_between( data, pattern, "};" )
+    struct_fix = "{"+replace_last(fix_types(struct),'},','}')+"}"
+    # TODO: check if the struct is correct
+else:
+    struct = pattern
 #print(struct_fix)
 #structured = json.loads(struct_fix)
 #print(structured)
@@ -156,5 +185,6 @@ print(formated_types.keys())
 #print(get_message(struct_fix))
 formated_message = json.loads(get_message(struct_fix))
 print(formated_message.keys())
-out = check_methods(formated_types, get_primaryType(struct_fix).replace("\"","'"), formated_domain, formated_message)
-print(out)
+print(check_domain(formated_domain, formated_types))
+#out = check_methods(formated_types, get_primaryType(struct_fix).replace("\"","'"), formated_domain, formated_message)
+#print(out)

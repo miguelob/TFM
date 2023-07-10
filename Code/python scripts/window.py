@@ -1,5 +1,6 @@
 import tkinter as tk
 from readDatabase import returnNames, returnValues
+from extraChecks import check
 
 
 # Create the main window
@@ -29,10 +30,10 @@ def vul(input):
     checks = ["Not Found", "Wrong link", "Link not working", "Not found", "Unknown"]
     if input[3] not in checks:
         flag = True
-        error.append("Dapp Vulnerable due to the presence of eth_sign.")
+        error += "\nDapp Vulnerable due to the presence of eth_sign."
     if input[4] not in checks:
         flag = True
-        error.append("Dapp Vulnerable due to the presence of personal_sign.")
+        error += "\nDapp Vulnerable due to the presence of personal_sign."
     if flag == False:
         error = "Dapp not vulnerable."
         check = "green"
@@ -69,8 +70,13 @@ def show_results():
     personal_sign_label.pack()
 
     out = vul(values)
-    vulnerability_label = tk.Label(results_window, text=f"Vulnerability: {out[0]}", fg=out[1])
+    vulnerability_label = tk.Label(results_window, text=f"\n\nVulnerability: {out[0]}", fg=out[1])
     vulnerability_label.pack()
+
+    if selected_option.get() == "test" or selected_option.get() == "test2":
+        extra = check(selected_option.get())
+        extra_label = tk.Label(results_window, text=f"\nVulnerability check of the content: {extra}", fg="red")
+        extra_label.pack()
 
 # Bind the button to the show_results() function
 button.config(command=show_results)

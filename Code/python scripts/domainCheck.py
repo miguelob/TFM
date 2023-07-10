@@ -96,7 +96,7 @@ def check_domain(domain, types):
         if value['name'] not in values_defined:
             errors.append(value['name'] + " is defined in types but not used.")
     if errors == "":
-        errors = "No errors found."
+        errors = "\nNo errors found in the definition of the content."
     return errors
 
 def check_methods(types, primaryType, domain, message):
@@ -133,58 +133,68 @@ def check_methods(types, primaryType, domain, message):
                     errors.append(value2['name'] + " not in message.")
 
     if errors == "":
-        errors = "No errors found."
+        errors = "\nNo errors found in the definition of the content."
     return errors
 
-
-# path of the file
-path = "C:/Users/oleob/Downloads/test-dapp-main/src/index.js"
-
-check = False
-definition_check = False
 values = ["types","domain","primaryType","message"]
 domain_values =["name","version","chainId","verifyingContract","salt"]
 domain_types = ["string","string","uint256","address","bytes32"]
+check = False
+definition_check = False
+path = ""
 
-# open the file
-with open(path, "r") as file:
+def start(path):
+    path = path
+    values = ["types","domain","primaryType","message"]
+    domain_values =["name","version","chainId","verifyingContract","salt"]
+    domain_types = ["string","string","uint256","address","bytes32"]
+    check = False
+    definition_check = False
+
+    # open the file
+    with open(path, "r") as file:
     # read the file
-    data = file.read()
-    # find all the lines that contain eth_signTypedData_v4
-    for match in re.finditer("eth_signTypedData_v4", data):
-        # print the file name and the line number
-        check = True
-        print("Found eth_signTypedData_v4 in file: " + path + " at line: " + str(data.count("\n", 0, match.start()) + 1))
-        #read specific line
-        next_line = data.splitlines()[data.count("\n", 0, match.start()) + 1]
-        
-        # check for content of the line
-        if "JSON.stringify" in next_line:
-            # get the content of JSON.stringify
-            content = next_line.split("JSON.stringify(")[1].split(")")[0]
-            if ' ' in content:
-                definition_check = True
-            else:
-                pattern = r'const '+content+' = {'
+        data = file.read()
+        # find all the lines that contain eth_signTypedData_v4
+        for match in re.finditer("eth_signTypedData_v4", data):
+            # print the file name and the line number
+            check = True
+            print("Found eth_signTypedData_v4 in file: " + path + " at line: " + str(data.count("\n", 0, match.start()) + 1))
+            #read specific line
+            next_line = data.splitlines()[data.count("\n", 0, match.start()) + 1]
+            
+            # check for content of the line
+            if "JSON.stringify" in next_line:
+                # get the content of JSON.stringify
+                content = next_line.split("JSON.stringify(")[1].split(")")[0]
+                if ' ' in content:
+                    definition_check = True
+                else:
+                    pattern = r'const '+content+' = {'
 
-if not definition_check:
-    struct = find_between( data, pattern, "};" )
-    struct_fix = "{"+replace_last(fix_types(struct),'},','}')+"}"
-    # TODO: check if the struct is correct
-else:
-    struct = pattern
-#print(struct_fix)
-#structured = json.loads(struct_fix)
-#print(structured)
+    if not definition_check:
+        struct = find_between( data, pattern, "};" )
+        struct_fix = "{"+replace_last(fix_types(struct),'},','}')+"}"
+        # TODO: check if the struct is correct
+    else:
+        struct = pattern
+        #print(struct_fix)
+        #structured = json.loads(struct_fix)
+        #print(structured)
 
-print(get_primaryType(struct_fix))
-formated_domain = json.loads(get_domain(struct_fix))
-print(formated_domain.keys())
-formated_types = json.loads(get_types(struct_fix))
-print(formated_types.keys())
-#print(get_message(struct_fix))
-formated_message = json.loads(get_message(struct_fix))
-print(formated_message.keys())
-print(check_domain(formated_domain, formated_types))
-#out = check_methods(formated_types, get_primaryType(struct_fix).replace("\"","'"), formated_domain, formated_message)
-#print(out)
+    try:
+        print(get_primaryType(struct_fix))
+        formated_domain = json.loads(get_domain(struct_fix))
+        print(formated_domain.keys())
+        formated_types = json.loads(get_types(struct_fix))
+        print(formated_types.keys())
+        #print(get_message(struct_fix))
+        formated_message = json.loads(get_message(struct_fix))
+        print(formated_message.keys())
+        print(check_domain(formated_domain, formated_types))
+        out = check_domain(formated_domain, formated_types)
+    except:
+        out = "\nError in the definition of the content of the eth_signTypedData content."
+    return out
+    #out = check_methods(formated_types, get_primaryType(struct_fix).replace("\"","'"), formated_domain, formated_message)
+    #print(out)
